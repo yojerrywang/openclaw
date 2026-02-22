@@ -1,0 +1,213 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.9",
+    "lastTouchedAt": "2026-02-12T09:36:31.190Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-02-12T09:36:31.182Z",
+    "lastRunVersion": "2026.2.9",
+    "lastRunCommand": "configure",
+    "lastRunMode": "local"
+  },
+  "auth": {
+    "profiles": {
+      "github-copilot:github": {
+        "provider": "github-copilot",
+        "mode": "token"
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "github-copilot/gpt-5-mini"
+      },
+      "models": {
+        "github-copilot/gpt-5-mini": {}
+      },
+      "workspace": "/Users/admin/.openclaw/workspace",
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "groupChat": {
+          "mentionPatterns": [
+            "@team",
+            "hey team",
+            "team,"
+          ]
+        }
+      },
+      {
+        "id": "builder",
+        "name": "builder",
+        "workspace": "/Users/admin/.openclaw/workspace-builder",
+        "agentDir": "/Users/admin/.openclaw/agents/builder/agent",
+        "groupChat": {
+          "mentionPatterns": [
+            "@team",
+            "hey team",
+            "team,"
+          ]
+        }
+      },
+      {
+        "id": "ops",
+        "name": "ops",
+        "workspace": "/Users/admin/.openclaw/workspace-ops",
+        "agentDir": "/Users/admin/.openclaw/agents/ops/agent",
+        "groupChat": {
+          "mentionPatterns": [
+            "@team",
+            "hey team",
+            "team,"
+          ]
+        }
+      },
+      {
+        "id": "hr",
+        "name": "Pam",
+        "agentDir": "/Users/admin/.openclaw/agents/hr/agent",
+        "workspaceDir": "/Users/admin/.openclaw/workspace-hr",
+        "groupChat": {
+          "mentionPatterns": [
+            "@team",
+            "hey team",
+            "team,"
+          ]
+        }
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "agentId": "builder",
+      "match": {
+        "channel": "telegram",
+        "accountId": "clawd84ctobot"
+      }
+    },
+    {
+      "agentId": "ops",
+      "match": {
+        "channel": "telegram",
+        "accountId": "clawd84ceobot"
+      }
+    },
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "telegram",
+        "accountId": "clawd84bot"
+      }
+    }
+  ],
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": {
+          "enabled": true
+        },
+        "command-logger": {
+          "enabled": true
+        },
+        "boot-md": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "allowlist",
+      "allowFrom": [
+        "8559457466"
+      ],
+      "groupPolicy": "open",
+      "streamMode": "off",
+      "accounts": {
+        "clawd84ctobot": {
+          "enabled": true,
+          "dmPolicy": "allowlist",
+          "botToken": "REDACTED",
+          "groupPolicy": "open",
+          "streamMode": "off",
+          "allowFrom": [
+            "8559457466"
+          ]
+        },
+        "clawd84ceobot": {
+          "enabled": true,
+          "dmPolicy": "allowlist",
+          "botToken": "REDACTED",
+          "groupPolicy": "open",
+          "streamMode": "off",
+          "allowFrom": [
+            "8559457466"
+          ]
+        },
+        "clawd84bot": {
+          "dmPolicy": "allowlist",
+          "botToken": "REDACTED",
+          "groupPolicy": "open",
+          "streamMode": "off",
+          "enabled": true,
+          "allowFrom": [
+            "8559457466"
+          ]
+        }
+      }
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "REDACTED"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "nodes": {
+      "denyCommands": [
+        "camera.snap",
+        "camera.clip",
+        "screen.record",
+        "calendar.add",
+        "contacts.add",
+        "reminders.add"
+      ]
+    }
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    }
+  },
+  "plugins": {
+    "entries": {
+      "telegram": {
+        "enabled": true
+      }
+    }
+  }
+}
