@@ -116,6 +116,8 @@ Default behavior on Telegram/WhatsApp/Signal/iMessage/Microsoft Teams/Discord/Go
 - Approve with: `openclaw pairing approve <channel> <code>` (then the sender is added to a local allowlist store).
 - Public inbound DMs require an explicit opt-in: set `dmPolicy="open"` and include `"*"` in the channel allowlist (`allowFrom` / `channels.discord.allowFrom` / `channels.slack.allowFrom`; legacy: `channels.discord.dm.allowFrom`, `channels.slack.dm.allowFrom`).
 
+Slack multi-agent note: if you run multiple bot accounts in one channel and enable `allowBots: true`, only explicitly targeted bot-to-bot messages (mention or parent-thread targeting) are processed to reduce ping-pong loops.
+
 Run `openclaw doctor` to surface risky/misconfigured DM policies.
 
 ## Highlights

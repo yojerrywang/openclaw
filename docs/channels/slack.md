@@ -192,6 +192,8 @@ For actions/directory reads, user token can be preferred when configured. For wr
     - `systemPrompt`
     - `tools`, `toolsBySender`
 
+    Bot-loop guard: when `allowBots: true`, bot-authored messages are only processed when they explicitly target the receiving bot (for example `<@botId>` mention or reply in that bot's parent thread). Untargeted bot chatter is dropped to reduce ping-pong loops in shared multi-bot channels.
+
   </Tab>
 </Tabs>
 

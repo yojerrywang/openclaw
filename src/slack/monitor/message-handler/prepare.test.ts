@@ -405,6 +405,85 @@ describe("slack prepareSlackMessage inbound contract", () => {
     expect(prepared!.ctxPayload.Body).not.toContain("thread_ts");
     expect(prepared!.ctxPayload.Body).not.toContain("parent_user_id");
   });
+
+  it("drops bot_message subtype events by default even without bot_id", async () => {
+    const prepared = await prepareWithDefaultCtx(
+      createSlackMessage({
+        user: "U_BOT",
+        subtype: "bot_message",
+        text: "hello from another bot",
+      }),
+    );
+
+    expect(prepared).toBeNull();
+  });
+
+  it("drops bot-authored messages detected from user profile flags", async () => {
+    const slackCtx = createInboundSlackCtx({
+      cfg: {
+        channels: { slack: { enabled: true } },
+      } as OpenClawConfig,
+    });
+    // oxlint-disable-next-line typescript/no-explicit-any
+    slackCtx.resolveUserName = async () => ({ name: "Loop Bot", isBot: true }) as any;
+
+    const prepared = await prepareMessageWith(
+      slackCtx,
+      createSlackAccount(),
+      createSlackMessage({
+        user: "U_PROFILE_BOT",
+        text: "<@B1> ping",
+      }),
+    );
+
+    expect(prepared).toBeNull();
+  });
+
+  it("drops untargeted bot messages even when allowBots=true", async () => {
+    const slackCtx = createInboundSlackCtx({
+      cfg: {
+        channels: { slack: { enabled: true, allowBots: true } },
+      } as OpenClawConfig,
+      defaultRequireMention: false,
+    });
+    // oxlint-disable-next-line typescript/no-explicit-any
+    slackCtx.resolveUserName = async () => ({ name: "Other Bot", isBot: true }) as any;
+
+    const prepared = await prepareMessageWith(
+      slackCtx,
+      createSlackAccount({ allowBots: true }),
+      createSlackMessage({
+        user: "U_OTHER_BOT",
+        subtype: "bot_message",
+        text: "standing by",
+      }),
+    );
+
+    expect(prepared).toBeNull();
+  });
+
+  it("allows targeted bot messages when allowBots=true and this bot is explicitly mentioned", async () => {
+    const slackCtx = createInboundSlackCtx({
+      cfg: {
+        channels: { slack: { enabled: true, allowBots: true } },
+      } as OpenClawConfig,
+      defaultRequireMention: false,
+    });
+    // oxlint-disable-next-line typescript/no-explicit-any
+    slackCtx.resolveUserName = async () => ({ name: "Other Bot", isBot: true }) as any;
+
+    const prepared = await prepareMessageWith(
+      slackCtx,
+      createSlackAccount({ allowBots: true }),
+      createSlackMessage({
+        user: "U_OTHER_BOT",
+        subtype: "bot_message",
+        text: "<@B1> can you take this?",
+      }),
+    );
+
+    expect(prepared).toBeTruthy();
+  });
 });
 
 describe("prepareSlackMessage sender prefix", () => {
