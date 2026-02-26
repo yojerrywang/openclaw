@@ -52,16 +52,93 @@ launchctl list | grep openclaw
 
 ## 3. Project Management (Linear Sync)
 
-The fleet's backlog is synchronized with Linear using a custom GraphQL integration.
+The fleet's backlog is synchronized with Linear using the **Python Linear client** plus explicit GraphQL mutations for advanced workflows.
 
 - **Local Source**: `configs/dr-claw/task.md`
-- **Sync Command**: `node scripts/sync-linear.mjs` (Custom lead automation)
+- **Canonical Client**: `python3 skills/linear-issues/scripts/linear_client.py`
+- **Auth Source**: `~/.openclaw/openclaw.json` -> `skills.entries["linear-issues"].apiKey`
 
-Each task marked `[ ]` in `task.md` is mirrored as a Linear issue.
+### Canonical Process
+
+1. **Create backlog issues from task.md entries**
+   - Use the Python Linear client for issue creation/listing.
+   - Write the resulting `DRC-*` identifier back into `task.md`.
+2. **Assign issues into projects**
+   - Engineering work -> `Dev Production`
+   - Content work -> `Content Production & Marketing`
+3. **Move issues by workflow state**
+   - Product and execution states for build tasks.
+   - Content-prefixed states for editorial and publication tasks.
+4. **Keep local and remote in lockstep**
+   - `task.md` remains the local planning source of truth.
+   - Linear is the execution system of record.
+
+### Notes
+
+- The old ad-hoc `scripts/sync-linear.mjs` flow is deprecated and removed.
+- For bulk operations (state creation, project assignment, Obsidian imports), use authenticated Python GraphQL scripts to avoid schema drift.
 
 ---
 
-## 4. Automated Health Checks
+## 4. Product to Content Workflow (Integrated)
+
+The fleet now runs a single integrated lifecycle across product execution and content production.
+
+### Lifecycle Stages
+
+1. **Product Thinking**  
+   Capture strategy and requirements as backlog tasks in `configs/dr-claw/task.md` and mirror to Linear.
+2. **Issue Creation**  
+   Create and assign implementation issues in **Dev Production**.
+3. **Issue Completion**  
+   Move implementation issues through the engineering lane to completion.
+4. **Postmortem Review**  
+   Record what worked/failed and conversion opportunities.
+5. **Content Generation**  
+   Convert outputs to publishable assets in **Content Production & Marketing**.
+6. **Content Process Progress**  
+   Track each content item through workflow states.
+7. **Content Publication**  
+   Publish and log outcomes for weekly KPI optimization.
+
+### Obsidian -> Linear Content Sync
+
+- **Vault source**: active Obsidian vault (from `~/Library/Application Support/obsidian/obsidian.json`)
+- **Linear destination**: project `Content Production & Marketing`
+- **Imported content**: `posts/*`, `video-scripts/*`, `pages/*`, `channels/*` Markdown notes
+
+### Content Workflow States
+
+- `Content: Unpublished`
+- `Content: Drafting`
+- `Content: Reviewed`
+- `Content: Short Script Ready`
+- `Content: Short Produced`
+- `Content: Scheduled`
+- `Content: Published`
+- `Content: Postmortem`
+
+### State Mapping Rules
+
+- Obsidian `status: ready` -> `Content: Reviewed`
+- Obsidian `status: draft` -> `Content: Drafting`
+- `video-scripts/*` -> `Content: Short Script Ready`
+- No explicit status -> `Content: Unpublished`
+
+### Traceability Contract
+
+Every synced content issue stores source metadata in description:
+
+- `source_file`
+- `content_type`
+- `obsidian_uri`
+- `last_modified`
+
+This guarantees deterministic round-tripping between content notes and execution tracking.
+
+---
+
+## 5. Automated Health Checks
 
 A dedicated script is provided to verify the fleet's operational status:
 
@@ -84,7 +161,7 @@ This script performs the following checks:
 
 ---
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 - **Dropped Baton**: If the bots stop responding in a thread, the baton may have been "dropped" due to a timeout. Restarting the Gateway or manually mentioning an agent will reset the state.
 - **Rate Limits**: With 6 bots, Slack may occasionally rate-limit the workspace. The Gateway handles retries, but a 10-second delay between messages is normal.

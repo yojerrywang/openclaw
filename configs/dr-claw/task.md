@@ -49,6 +49,76 @@
 - [ ] Work Room: Delivery pipeline orchestration (`DRC-20`)
 - [ ] Play Room: Sandbox simulation mode (`DRC-21`)
 
+## Build Order: Attention Ops + Revenue (Next 14 Days)
+
+- [ ] Foundation: Single inbox + taxonomy for decisions and handoffs (`DRC-43`)
+  - Scope: Slack = command inbox, Obsidian = memory, Linear = execution tracker.
+  - Deliverables: tag schema (`council`, `war-room`, `scouting`, `work`, `play`), naming convention, and routing rules.
+  - Acceptance: every new digest/trade/job/action maps to one project tag and one owner.
+
+- [ ] Scouting Pipeline v1: Social/media ingestion + dedupe + ranking (`DRC-44`)
+  - Sources: Reddit, YouTube, Facebook groups, LinkedIn, TikTok, Instagram, X.
+  - Behavior: read-only collection, duplicate collapse, relevance scoring, urgency flag.
+  - Acceptance: two daily high-signal digests with less than 20 items each and escalation only for urgent signals.
+
+- [ ] Digest Engine v1: Push briefings to Slack + Obsidian (`DRC-45`)
+  - Format: top item, why it matters, confidence, and action tag (`ignore`, `watch`, `act`).
+  - Cadence: morning briefing, evening briefing, and urgent interrupt lane.
+  - Acceptance: no manual feed scrolling required to stay current on selected topics.
+
+- [ ] Content Production Pipeline v1: Turn high-signal briefings into published assets (`DRC-76`)
+  - Integration: Bridge Digest Engine (`DRC-45`) with `extensions/open-prose/skills/prose`.
+  - Behavior: Automated drafting, editorial review loops, and social media variant generation.
+  - Acceptance: one "briefing-to-blog" run completed end-to-end without manual intervention.
+
+- [ ] Trading Copilot v1 (Read-only): Setup cards and risk guardrails (`DRC-46`)
+  - Sources: Robinhood + AfterHour signals/news/watchlists.
+  - Behavior: generate setup cards (thesis, trigger, invalidation, sizing suggestion).
+  - Guardrail: manual execution only until strategy review passes.
+  - Acceptance: every trade idea is journaled and scored before any execution decision.
+
+- [ ] Job Ops Copilot v1: Assisted apply pipeline (not blind auto-apply) (`DRC-47`)
+  - Sources: LinkedIn + Indeed role ingestion.
+  - Behavior: score fit, tailor resume/cover letter draft, queue one-click approve/send.
+  - Guardrail: human approval required per submission.
+  - Acceptance: measurable conversion funnel (`sourced` -> `applied` -> `interview` -> `offer`).
+
+- [ ] Intake + Booking Automation v1: Sell setup sessions (`DRC-48`)
+  - Offer: "OpenClaw Setup Sprint" at $150 for 90 minutes.
+  - Flow: intake form -> qualification check -> booking link -> calendar + reminder automation.
+  - Deliverables: post-call action plan and handoff checklist.
+  - Acceptance: first paid session can be booked and fulfilled end-to-end without manual admin overhead.
+
+- [ ] Weekly KPI Loop v1: Operator dashboard + optimization (`DRC-49`)
+  - KPIs: feed-time reduction, digest action rate, interview conversion, trade setup quality, booked revenue.
+  - Cadence: weekly review with "keep / change / remove" decisions.
+  - Acceptance: week-over-week trend report posted automatically with top 3 optimization actions.
+
+## Content Ops Integration: Obsidian -> Linear (Complete)
+
+- [x] Created content project in Linear: **Content Production & Marketing**
+- [x] Defined content workflow states:
+  - [x] Content: Unpublished
+  - [x] Content: Drafting
+  - [x] Content: Reviewed
+  - [x] Content: Short Script Ready
+  - [x] Content: Short Produced
+  - [x] Content: Scheduled
+  - [x] Content: Published
+  - [x] Content: Postmortem
+- [x] Imported Obsidian vault content as Linear issues (`DRC-51` to `DRC-75`)
+- [x] Mapped post notes with `status: ready` to **Content: Reviewed**
+- [x] Mapped `video-scripts/*` notes to **Content: Short Script Ready**
+- [x] Added metadata in issue descriptions for source traceability:
+  - [x] `source_file`
+  - [x] `content_type`
+  - [x] `obsidian_uri`
+  - [x] `last_modified`
+
+## Agent Capabilities: Subagent Delegation (Next)
+
+- [ ] Implement recursive subagent delegation for Penny, Brain, and Gadget tool loops (`DRC-27`)
+
 ## Future Roadmap
 
 - [ ] Dockerize for 24/7 uptime (`DRC-16`)

@@ -4,6 +4,10 @@ Docs: https://docs.openclaw.ai
 
 ## 2026.2.26 (Unreleased)
 
+### Changes
+
+- Dr. Claw/Ops: document and operationalize an integrated product-to-content lifecycle (product thinking -> execution -> postmortem -> content generation -> publication), including Obsidian-vault to Linear content sync with workflow states for unpublished/reviewed/short-produced/published tracking, and standardize Linear operations on the Python `linear-issues` client workflow.
+
 ### Fixes
 
 - CI/Windows: shard the Windows `checks-windows` test lane into two matrix jobs and honor explicit shard index overrides in `scripts/test-parallel.mjs` to reduce CI critical-path wall time. (#27234) Thanks @joshavant.
