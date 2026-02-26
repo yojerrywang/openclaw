@@ -93,13 +93,41 @@ export async function prepareSlackMessage(params: {
     cfg.channels?.slack?.allowBots ??
     false;
 
-  const isBotMessage = Boolean(message.bot_id);
+  const isSelfMessage = Boolean(message.user && ctx.botUserId && message.user === ctx.botUserId);
+  const needsUserBotLookup = Boolean(
+    message.user && !message.bot_id && message.subtype !== "bot_message",
+  );
+  const senderProfile = needsUserBotLookup
+    ? await ctx.resolveUserName(message.user as string)
+    : null;
+  const isProfileBotMessage = Boolean(senderProfile?.isBot || senderProfile?.isAppUser);
+  const isBotMessage =
+    Boolean(message.bot_id) ||
+    message.subtype === "bot_message" ||
+    isSelfMessage ||
+    isProfileBotMessage;
+
+  if (isSelfMessage) {
+    return null;
+  }
   if (isBotMessage) {
-    if (message.user && ctx.botUserId && message.user === ctx.botUserId) {
-      return null;
-    }
     if (!allowBots) {
       logVerbose(`slack: drop bot message ${message.bot_id ?? "unknown"} (allowBots=false)`);
+      return null;
+    }
+
+    const botMentioned = Boolean(
+      ctx.botUserId &&
+      typeof message.text === "string" &&
+      message.text.includes(`<@${ctx.botUserId}>`),
+    );
+    const botThreadParentTargeted = Boolean(
+      ctx.botUserId && message.parent_user_id && message.parent_user_id === ctx.botUserId,
+    );
+    if (!botMentioned && !botThreadParentTargeted) {
+      logVerbose(
+        `slack: drop bot message ${message.bot_id ?? message.user ?? "unknown"} (not targeted to this bot)`,
+      );
       return null;
     }
   }
@@ -235,7 +263,7 @@ export async function prepareSlackMessage(params: {
     message.parent_user_id === ctx.botUserId,
   );
 
-  const sender = message.user ? await ctx.resolveUserName(message.user) : null;
+  const sender = message.user ? (senderProfile ?? (await ctx.resolveUserName(message.user))) : null;
   const senderName =
     sender?.name ?? message.username?.trim() ?? message.user ?? message.bot_id ?? "unknown";
 

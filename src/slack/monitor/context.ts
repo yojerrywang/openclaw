@@ -103,7 +103,9 @@ export type SlackMonitorContext = {
     topic?: string;
     purpose?: string;
   }>;
-  resolveUserName: (userId: string) => Promise<{ name?: string }>;
+  resolveUserName: (
+    userId: string,
+  ) => Promise<{ name?: string; isBot?: boolean; isAppUser?: boolean }>;
   setSlackThreadStatus: (params: {
     channelId: string;
     threadTs?: string;
@@ -158,7 +160,7 @@ export function createSlackMonitorContext(params: {
       purpose?: string;
     }
   >();
-  const userCache = new Map<string, { name?: string }>();
+  const userCache = new Map<string, { name?: string; isBot?: boolean; isAppUser?: boolean }>();
   const seenMessages = createDedupeCache({ ttlMs: 60_000, maxSize: 500 });
 
   const allowFrom = normalizeAllowList(params.allowFrom);
@@ -240,7 +242,11 @@ export function createSlackMonitorContext(params: {
       });
       const profile = info.user?.profile;
       const name = profile?.display_name || profile?.real_name || info.user?.name || undefined;
-      const entry = { name };
+      const entry = {
+        name,
+        isBot: Boolean(info.user?.is_bot),
+        isAppUser: Boolean(info.user?.is_app_user),
+      };
       userCache.set(userId, entry);
       return entry;
     } catch {
