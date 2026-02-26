@@ -19,7 +19,14 @@ import {
 import type { SlackStreamSession } from "../../streaming.js";
 import { appendSlackStream, startSlackStream, stopSlackStream } from "../../streaming.js";
 import { resolveSlackThreadTargets } from "../../threading.js";
+import { enforceStoryCoherence, normalizeStoryModeText } from "../orchestration.js";
 import { createSlackReplyDeliveryPlan, deliverReplies, resolveSlackThreadTs } from "../replies.js";
+import {
+  getBatonSnapshot,
+  isBatonActive,
+  recordBotReply,
+  resolveBatonTurnDelayMs,
+} from "../thread-relay.js";
 import type { PreparedSlackMessage } from "./types.js";
 
 function hasMedia(payload: ReplyPayload): boolean {
@@ -158,11 +165,111 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
   });
   let streamSession: SlackStreamSession | null = null;
   let streamFailed = false;
+  let batonDelayApplied = false;
+  let batonTurnCompleted = false;
+
+  const isBatonThread = (threadTs: string | undefined): boolean =>
+    Boolean(threadTs && isBatonActive({ channelId: message.channel, threadTs }));
+  const batonContextThreadTs = message.thread_ts ?? message.ts;
+  const dispatchStartedInBaton = Boolean(
+    batonContextThreadTs &&
+    isBatonActive({ channelId: message.channel, threadTs: batonContextThreadTs }),
+  );
+
+  const isStaleBatonDispatch = (threadTs: string | undefined): boolean => {
+    if (!dispatchStartedInBaton || !threadTs) {
+      return false;
+    }
+    const snapshot = getBatonSnapshot({ channelId: message.channel, threadTs });
+    const expectedAgentId = snapshot?.roster[snapshot.turnIndex];
+    const stale = expectedAgentId !== account.accountId;
+    if (stale) {
+      logVerbose(
+        `slack: drop stale baton dispatch for ${account.accountId} channel=${message.channel} thread=${threadTs} expected=${expectedAgentId ?? "none"}`,
+      );
+    }
+    return stale;
+  };
+
+  const shouldDropAdditionalBatonReply = (threadTs: string | undefined): boolean => {
+    if (!batonTurnCompleted || !isBatonThread(threadTs)) {
+      return false;
+    }
+    logVerbose(
+      `slack: dropping extra baton payload for ${account.accountId} channel=${message.channel} thread=${threadTs}`,
+    );
+    return true;
+  };
+
+  const recordReplyForTurn = (replyThreadTs: string | undefined, text?: string): void => {
+    if (!replyThreadTs) {
+      return;
+    }
+    recordBotReply({
+      channelId: message.channel,
+      threadTs: replyThreadTs,
+      agentId: account.accountId,
+      text,
+    });
+    if (isBatonThread(replyThreadTs)) {
+      batonTurnCompleted = true;
+    }
+  };
+
+  const delayForBatonTurn = async (threadTs: string | undefined): Promise<void> => {
+    if (batonDelayApplied || !threadTs) {
+      return;
+    }
+    const delayMs = resolveBatonTurnDelayMs({
+      channelId: message.channel,
+      threadTs,
+      agentId: account.accountId,
+    });
+    if (delayMs <= 0) {
+      return;
+    }
+    batonDelayApplied = true;
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, delayMs);
+    });
+  };
+
+  const normalizeBatonPayload = (
+    payload: ReplyPayload,
+    threadTs: string | undefined,
+  ): ReplyPayload => {
+    if (!threadTs || !isBatonActive({ channelId: message.channel, threadTs }) || !payload.text) {
+      return payload;
+    }
+    const snapshot = getBatonSnapshot({ channelId: message.channel, threadTs });
+    const normalizedText = normalizeStoryModeText(payload.text);
+    const coherentText = snapshot
+      ? enforceStoryCoherence({
+          text: normalizedText,
+          agentId: account.accountId,
+          turnIndex: snapshot.turnIndex,
+          state: snapshot.state,
+          transcript: snapshot.transcript,
+        })
+      : normalizedText;
+    return { ...payload, text: coherentText };
+  };
 
   const deliverNormally = async (payload: ReplyPayload, forcedThreadTs?: string): Promise<void> => {
     const replyThreadTs = forcedThreadTs ?? replyPlan.nextThreadTs();
+    if (isStaleBatonDispatch(replyThreadTs)) {
+      return;
+    }
+    if (shouldDropAdditionalBatonReply(replyThreadTs)) {
+      return;
+    }
+    await delayForBatonTurn(replyThreadTs);
+    if (isStaleBatonDispatch(replyThreadTs)) {
+      return;
+    }
+    const normalizedPayload = normalizeBatonPayload(payload, replyThreadTs);
     await deliverReplies({
-      replies: [payload],
+      replies: [normalizedPayload],
       target: prepared.replyTarget,
       token: ctx.botToken,
       accountId: account.accountId,
@@ -171,6 +278,8 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
       replyThreadTs,
     });
     replyPlan.markSent();
+
+    recordReplyForTurn(replyThreadTs, normalizedPayload.text);
   };
 
   const deliverWithStreaming = async (payload: ReplyPayload): Promise<void> => {
@@ -179,11 +288,20 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
       return;
     }
 
-    const text = payload.text.trim();
+    const previewThreadTs = streamSession?.threadTs ?? replyPlan.nextThreadTs();
+    if (isStaleBatonDispatch(previewThreadTs)) {
+      return;
+    }
+    const normalizedPayload = normalizeBatonPayload(payload, previewThreadTs);
+    const text = normalizedPayload.text?.trim() ?? "";
+    if (!text) {
+      await deliverNormally(normalizedPayload, streamSession?.threadTs ?? previewThreadTs);
+      return;
+    }
     let plannedThreadTs: string | undefined;
     try {
       if (!streamSession) {
-        const streamThreadTs = replyPlan.nextThreadTs();
+        const streamThreadTs = previewThreadTs;
         plannedThreadTs = streamThreadTs;
         if (!streamThreadTs) {
           logVerbose(
@@ -194,6 +312,10 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
           return;
         }
 
+        await delayForBatonTurn(streamThreadTs);
+        if (isStaleBatonDispatch(streamThreadTs)) {
+          return;
+        }
         streamSession = await startSlackStream({
           client: ctx.app.client,
           channel: message.channel,
@@ -203,9 +325,16 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
           userId: message.user,
         });
         replyPlan.markSent();
+
+        if (streamThreadTs) {
+          recordReplyForTurn(streamThreadTs, text);
+        }
         return;
       }
 
+      if (isStaleBatonDispatch(streamSession.threadTs)) {
+        return;
+      }
       await appendSlackStream({
         session: streamSession,
         text: "\n" + text,
@@ -250,6 +379,8 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
             ts: draftMessageId,
             text: finalText.trim(),
           });
+          const replyThreadTs = replyPlan.nextThreadTs();
+          recordReplyForTurn(replyThreadTs, finalText.trim());
           return;
         } catch (err) {
           logVerbose(
@@ -277,8 +408,13 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
       }
 
       const replyThreadTs = replyPlan.nextThreadTs();
+      if (shouldDropAdditionalBatonReply(replyThreadTs)) {
+        return;
+      }
+      await delayForBatonTurn(replyThreadTs);
+      const normalizedPayload = normalizeBatonPayload(payload, replyThreadTs);
       await deliverReplies({
-        replies: [payload],
+        replies: [normalizedPayload],
         target: prepared.replyTarget,
         token: ctx.botToken,
         accountId: account.accountId,
@@ -287,6 +423,8 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
         replyThreadTs,
       });
       replyPlan.markSent();
+
+      recordReplyForTurn(replyThreadTs, normalizedPayload.text);
     },
     onError: (err, info) => {
       runtime.error?.(danger(`slack ${info.kind} reply failed: ${String(err)}`));

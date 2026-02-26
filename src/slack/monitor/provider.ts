@@ -181,7 +181,11 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
     botUserId = auth.user_id ?? "";
     teamId = auth.team_id ?? "";
     apiAppId = (auth as { api_app_id?: string }).api_app_id ?? "";
-  } catch {
+    runtime.log?.(
+      `slack: account="${account.accountId}" resolved botUserId="${botUserId}" teamId="${teamId}"`,
+    );
+  } catch (err) {
+    runtime.error?.(`slack: auth.test failed for account="${account.accountId}": ${String(err)}`);
     // auth test failing is non-fatal; message handler falls back to regex mentions.
   }
 
