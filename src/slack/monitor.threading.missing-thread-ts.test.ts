@@ -76,6 +76,7 @@ beforeEach(() => {
         dm: { enabled: true, policy: "open", allowFrom: ["*"] },
         groupPolicy: "open",
         channels: { C1: { allow: true, requireMention: false } },
+        streaming: false,
       },
     },
   });

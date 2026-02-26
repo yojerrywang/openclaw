@@ -200,6 +200,10 @@ vi.mock("@slack/bolt", () => {
       replies: vi.fn().mockResolvedValue({ messages: [] }),
       history: vi.fn().mockResolvedValue({ messages: [] }),
     },
+    chatStream: vi.fn().mockReturnValue({
+      append: vi.fn().mockResolvedValue({ ok: true }),
+      stop: vi.fn().mockResolvedValue({ ok: true }),
+    }),
     users: {
       info: vi.fn().mockResolvedValue({
         user: { profile: { display_name: "Ada" } },

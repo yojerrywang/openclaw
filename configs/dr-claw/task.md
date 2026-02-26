@@ -10,13 +10,13 @@
 
 ## Sprint 2: Story Mode Reliability [COMPLETE]
 
-- [x] Draft implementation plan for Sprint 2
+- [x] Draft implementation plan for Sprint 2 (`DRC-11`)
 - [x] Refine system prompts (Strict identity silence & extreme brevity)
-- [x] Enforce 1-2 sentence maximum \& zero self-identification
-- [x] Execute final acceptance tests (local baton suite + live handoff checks)
-  - [x] **Brevity**: 1-2 sentences max
-  - [x] **No Intro**: Zero "Bot here" noise
-  - [x] **Order**: Verify sequencing
+- [x] Enforce 1-2 sentence maximum & zero self-identification
+- [x] Execute final acceptance tests (`DRC-7`, `DRC-8`, `DRC-9`)
+  - [x] **Brevity**: 1-2 sentences max (`DRC-7`)
+  - [x] **No Intro**: Zero "Bot here" noise (`DRC-8`)
+  - [x] **Order**: Verify sequencing (`DRC-9`)
 - [x] Implement deterministic baton watchdog and race protection
 - [x] Add story-mode coherence guardrails and persona turn prompts
 - [x] Migrate Inspector Gadget internal agent id from `talon` to `gadget`
@@ -28,22 +28,18 @@
 - [x] Restart gateway via daemon service and verify Slack provider reconnection
 - [x] Verify orchestrator-only greeting behavior (`hi` -> Penny lead)
 - [x] Verify full 6-agent baton continuity in live Slack threads
-- [x] Enforce canonical story turn order:
-  - [x] Chief Quimby -> Penny -> Brain -> Inspector Gadget -> MAD Cat -> Dr Claw
-- [x] Harden duplicate-turn prevention:
-  - [x] strict baton claim lock (drop same-agent duplicate event processing)
-  - [x] stale-dispatch drop before send
-- [x] Story output cleanup:
-  - [x] hard reply length cap for Slack readability
-  - [x] strip self-name prefixes/suffix handoff labels (`MAD Cat.`, `Dr.`)
+- [x] Enforce canonical story turn order (`DRC-12`)
+- [x] Harden duplicate-turn prevention
+- [x] Story output cleanup
 
 ## Sprint 4: Story Quality (Next)
 
-- [ ] Improve episode-style coherence over 6-turn runs (setup -> escalation -> payoff)
-- [ ] Add per-character lexical constraints from Inspector Gadget script corpus
-- [ ] Tune Dr Claw close so it always lands as single final line (no follow-up fragments)
-- [ ] Add acceptance harness for content quality (not only protocol correctness)
-- [ ] Add optional "Council mode" prompt contract for non-story project collaboration
+- [ ] Improve episode-style coherence over 6-turn runs (`DRC-22`)
+- [ ] Add per-character lexical constraints from Inspector Gadget script corpus (`DRC-23`)
+- [ ] Tune Dr Claw close so it always lands as single final line (`DRC-24`)
+- [ ] Add acceptance harness for content quality (`DRC-25`)
+- [ ] Production Deployment: Await final Slack tokens for production fleet (`DRC-10`)
+- [ ] Add optional "Council mode" prompt contract for non-story project collaboration (`DRC-26`)
 
 ## Collaboration Rooms Backlog (Synced to Linear)
 
@@ -55,7 +51,7 @@
 
 ## Future Roadmap
 
-- [ ] Voice transcription (Groq/Whisper)
-- [ ] Long-term memory (Pinecone)
-- [ ] MCP integrations (Email, Calendar)
-- [ ] Dockerize for 24/7 uptime
+- [ ] Dockerize for 24/7 uptime (`DRC-16`)
+- [ ] MCP integrations (`DRC-15`)
+- [ ] Long-term memory (`DRC-14`)
+- [ ] Voice transcription (`DRC-13`)

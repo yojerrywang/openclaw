@@ -33,7 +33,12 @@ function hasMedia(payload: ReplyPayload): boolean {
   return Boolean(payload.mediaUrl) || (payload.mediaUrls?.length ?? 0) > 0;
 }
 
-export function isSlackStreamingEnabled(streaming: boolean | undefined): boolean {
+export function isSlackStreamingEnabled(
+  streaming: boolean | { mode: string; nativeStreaming: boolean } | undefined,
+): boolean {
+  if (typeof streaming === "object" && streaming !== null) {
+    return streaming.mode === "partial" && streaming.nativeStreaming;
+  }
   return streaming !== false;
 }
 
@@ -276,6 +281,7 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
       runtime,
       textLimit: ctx.textLimit,
       replyThreadTs,
+      replyToMode: ctx.replyToMode,
     });
     replyPlan.markSent();
 
@@ -421,6 +427,7 @@ export async function dispatchPreparedSlackMessage(prepared: PreparedSlackMessag
         runtime,
         textLimit: ctx.textLimit,
         replyThreadTs,
+        replyToMode: ctx.replyToMode,
       });
       replyPlan.markSent();
 
