@@ -34,12 +34,16 @@ function hasMedia(payload: ReplyPayload): boolean {
 }
 
 export function isSlackStreamingEnabled(
-  streaming: boolean | { mode: string; nativeStreaming: boolean } | undefined,
+  streaming: boolean | string | { mode: string; nativeStreaming: boolean } | undefined,
 ): boolean {
   if (typeof streaming === "object" && streaming !== null) {
-    return streaming.mode === "partial" && streaming.nativeStreaming;
+    const s = streaming as { mode: string; nativeStreaming: boolean };
+    return s.mode === "partial" && s.nativeStreaming;
   }
-  return streaming !== false;
+  if (streaming === "off") {
+    return false;
+  }
+  return streaming !== false && streaming !== undefined;
 }
 
 export function resolveSlackStreamingThreadHint(params: {

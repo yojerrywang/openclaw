@@ -49,10 +49,15 @@ describe("fetchWithSlackAuth", () => {
 
     // Verify fetch was called with correct params
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith("https://files.slack.com/test.jpg", {
-      headers: { Authorization: "Bearer xoxb-test-token" },
-      redirect: "manual",
-    });
+    const [url, init] = mockFetch.mock.calls[0];
+    expect(url).toBe("https://files.slack.com/test.jpg");
+    expect(init?.redirect).toBe("manual");
+    const headers = init?.headers as unknown;
+    const auth =
+      headers instanceof Headers
+        ? headers.get("Authorization")
+        : (headers as Record<string, string>)?.Authorization;
+    expect(auth).toBe("Bearer xoxb-test-token");
   });
 
   it("rejects non-Slack hosts to avoid leaking tokens", async () => {
@@ -85,17 +90,26 @@ describe("fetchWithSlackAuth", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
 
     // First call should have Authorization header and manual redirect
-    expect(mockFetch).toHaveBeenNthCalledWith(1, "https://files.slack.com/test.jpg", {
-      headers: { Authorization: "Bearer xoxb-test-token" },
-      redirect: "manual",
-    });
+    const [url1, init1] = mockFetch.mock.calls[0];
+    expect(url1).toBe("https://files.slack.com/test.jpg");
+    expect(init1?.redirect).toBe("manual");
+    const headers1 = init1?.headers as unknown;
+    const auth1 =
+      headers1 instanceof Headers
+        ? headers1.get("Authorization")
+        : (headers1 as Record<string, string>)?.Authorization;
+    expect(auth1).toBe("Bearer xoxb-test-token");
 
     // Second call should follow the redirect without Authorization
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      2,
-      "https://cdn.slack-edge.com/presigned-url?sig=abc123",
-      { redirect: "follow" },
-    );
+    const [url2, init2] = mockFetch.mock.calls[1];
+    expect(url2).toBe("https://cdn.slack-edge.com/presigned-url?sig=abc123");
+    expect(init2?.redirect).toBe("follow");
+    const headers2 = init2?.headers as unknown;
+    const auth2 =
+      headers2 instanceof Headers
+        ? headers2?.get("Authorization")
+        : (headers2 as Record<string, string>)?.Authorization;
+    expect(auth2).toBeFalsy();
   });
 
   it("handles relative redirect URLs", async () => {
@@ -115,9 +129,9 @@ describe("fetchWithSlackAuth", () => {
     await fetchWithSlackAuth("https://files.slack.com/original.jpg", "xoxb-test-token");
 
     // Second call should resolve the relative URL against the original
-    expect(mockFetch).toHaveBeenNthCalledWith(2, "https://files.slack.com/files/redirect-target", {
-      redirect: "follow",
-    });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[1][0]).toBe("https://files.slack.com/files/redirect-target");
+    expect(mockFetch.mock.calls[1][1]?.redirect).toBe("follow");
   });
 
   it("returns redirect response when no location header is provided", async () => {
@@ -164,9 +178,8 @@ describe("fetchWithSlackAuth", () => {
     await fetchWithSlackAuth("https://files.slack.com/test.jpg", "xoxb-test-token");
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    expect(mockFetch).toHaveBeenNthCalledWith(2, "https://cdn.slack.com/new-url", {
-      redirect: "follow",
-    });
+    expect(mockFetch.mock.calls[1][0]).toBe("https://cdn.slack.com/new-url");
+    expect(mockFetch.mock.calls[1][1]?.redirect).toBe("follow");
   });
 });
 
