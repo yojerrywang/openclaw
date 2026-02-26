@@ -11,6 +11,9 @@ Docs: https://docs.openclaw.ai
 
 ### Fixes
 
+- Slack/Multi-agent: prevent cross-bot ping-pong loops in channel mode by dropping untargeted bot-authored messages even when `allowBots: true`; bot messages are now processed only when they explicitly target the receiving bot (mention or parent-thread targeting).
+- Slack: finalize project scope to a 6-bot fleet (Dr. Claw, Brain, Talon, Penny, MAD Cat, Chief Quimby) and remove HR agent (Pam) integration.
+- Slack/Prompts: enforce extreme brevity (1-2 sentences) and absolute identity silence across the fleet to reduce token consumption and improve professional flow.
 - Gateway/Pairing: tolerate legacy paired devices missing `roles`/`scopes` metadata in websocket upgrade checks and backfill metadata on reconnect. (#21447, fixes #21236) Thanks @joshavant.
 - Docker: pin base images to SHA256 digests in Docker builds to prevent mutable tag drift. (#7734) Thanks @coygeek.
 - Provider/HTTP: treat HTTP 503 as failover-eligible for LLM provider errors. (#21086) Thanks @Protocol-zero-0.
