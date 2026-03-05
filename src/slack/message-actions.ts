@@ -30,6 +30,7 @@ export function listSlackMessageActions(cfg: OpenClawConfig): ChannelMessageActi
   }
   if (isActionEnabled("messages")) {
     actions.add("read");
+    actions.add("thread-list");
     actions.add("edit");
     actions.add("delete");
   }

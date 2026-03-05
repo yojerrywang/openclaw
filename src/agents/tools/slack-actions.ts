@@ -252,12 +252,14 @@ export async function handleSlackAction(
         const before = readStringParam(params, "before");
         const after = readStringParam(params, "after");
         const threadId = readStringParam(params, "threadId");
+        const cursor = readStringParam(params, "cursor");
         const result = await readSlackMessages(channelId, {
           ...readOpts,
           limit,
           before: before ?? undefined,
           after: after ?? undefined,
           threadId: threadId ?? undefined,
+          cursor: cursor ?? undefined,
         });
         const messages = result.messages.map((message) =>
           withNormalizedTimestamp(
@@ -265,7 +267,12 @@ export async function handleSlackAction(
             (message as { ts?: unknown }).ts,
           ),
         );
-        return jsonResult({ ok: true, messages, hasMore: result.hasMore });
+        return jsonResult({
+          ok: true,
+          messages,
+          hasMore: result.hasMore,
+          nextCursor: result.nextCursor,
+        });
       }
       default:
         break;

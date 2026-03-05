@@ -105,12 +105,29 @@ export async function handleSlackMessageAction(params: {
       limit,
       before: readStringParam(actionParams, "before"),
       after: readStringParam(actionParams, "after"),
+      cursor: readStringParam(actionParams, "cursor"),
       accountId,
     };
     if (includeReadThreadId) {
       readAction.threadId = readStringParam(actionParams, "threadId");
     }
     return await invoke(readAction, cfg);
+  }
+
+  if (action === "thread-list") {
+    const limit = readNumberParam(actionParams, "limit", { integer: true });
+    const threadId = readStringParam(actionParams, "threadId", { required: true });
+    return await invoke(
+      {
+        action: "readMessages",
+        channelId: resolveChannelId(),
+        threadId,
+        limit,
+        cursor: readStringParam(actionParams, "cursor"),
+        accountId,
+      },
+      cfg,
+    );
   }
 
   if (action === "edit") {

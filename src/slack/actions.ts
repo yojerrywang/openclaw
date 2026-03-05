@@ -201,8 +201,9 @@ export async function readSlackMessages(
     before?: string;
     after?: string;
     threadId?: string;
+    cursor?: string;
   } = {},
-): Promise<{ messages: SlackMessageSummary[]; hasMore: boolean }> {
+): Promise<{ messages: SlackMessageSummary[]; hasMore: boolean; nextCursor?: string }> {
   const client = await getClient(opts);
 
   // Use conversations.replies for thread messages, conversations.history for channel messages.
@@ -213,6 +214,7 @@ export async function readSlackMessages(
       limit: opts.limit,
       latest: opts.before,
       oldest: opts.after,
+      cursor: opts.cursor,
     });
     return {
       // conversations.replies includes the parent message; drop it for replies-only reads.
@@ -220,6 +222,7 @@ export async function readSlackMessages(
         (message) => (message as SlackMessageSummary)?.ts !== opts.threadId,
       ) as SlackMessageSummary[],
       hasMore: Boolean(result.has_more),
+      nextCursor: result.response_metadata?.next_cursor || undefined,
     };
   }
 
@@ -228,10 +231,12 @@ export async function readSlackMessages(
     limit: opts.limit,
     latest: opts.before,
     oldest: opts.after,
+    cursor: opts.cursor,
   });
   return {
     messages: (result.messages ?? []) as SlackMessageSummary[],
     hasMore: Boolean(result.has_more),
+    nextCursor: result.response_metadata?.next_cursor || undefined,
   };
 }
 

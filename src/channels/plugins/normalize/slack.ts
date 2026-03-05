@@ -19,8 +19,15 @@ export function looksLikeSlackTargetId(raw: string): boolean {
   if (/^slack:/i.test(trimmed)) {
     return true;
   }
-  if (/^[@#]/.test(trimmed)) {
-    return true;
+  // Treat @.../#... as ids only when they actually look like Slack ids.
+  // Otherwise, let directory resolution handle @name / #channel.
+  if (trimmed.startsWith("@")) {
+    const candidate = trimmed.slice(1).trim();
+    return /^[UW][A-Z0-9]{8,}$/i.test(candidate);
+  }
+  if (trimmed.startsWith("#")) {
+    const candidate = trimmed.slice(1).trim();
+    return /^[CGD][A-Z0-9]{8,}$/i.test(candidate);
   }
   return /^[CUWGD][A-Z0-9]{8,}$/i.test(trimmed);
 }

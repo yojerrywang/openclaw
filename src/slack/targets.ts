@@ -44,21 +44,29 @@ export function parseSlackTarget(
   }
   if (trimmed.startsWith("@")) {
     const candidate = trimmed.slice(1).trim();
-    const id = ensureTargetId({
-      candidate,
-      pattern: /^[A-Z0-9]+$/i,
-      errorMessage: "Slack DMs require a user id (use user:<id> or <@id>)",
-    });
-    return buildMessagingTarget("user", id, trimmed);
+    // Only treat @U…/@W… as ids. For @name, defer to directory resolution.
+    if (/^[UW][A-Z0-9]{8,}$/i.test(candidate)) {
+      const id = ensureTargetId({
+        candidate,
+        pattern: /^[A-Z0-9]+$/i,
+        errorMessage: "Slack DMs require a user id (use user:<id> or <@id>)",
+      });
+      return buildMessagingTarget("user", id, trimmed);
+    }
+    return undefined;
   }
   if (trimmed.startsWith("#")) {
     const candidate = trimmed.slice(1).trim();
-    const id = ensureTargetId({
-      candidate,
-      pattern: /^[A-Z0-9]+$/i,
-      errorMessage: "Slack channels require a channel id (use channel:<id>)",
-    });
-    return buildMessagingTarget("channel", id, trimmed);
+    // Only treat #C…/#G…/#D… as ids. For #channel-name, defer to directory resolution.
+    if (/^[CGD][A-Z0-9]{8,}$/i.test(candidate)) {
+      const id = ensureTargetId({
+        candidate,
+        pattern: /^[A-Z0-9]+$/i,
+        errorMessage: "Slack channels require a channel id (use channel:<id>)",
+      });
+      return buildMessagingTarget("channel", id, trimmed);
+    }
+    return undefined;
   }
   if (options.defaultKind) {
     return buildMessagingTarget(options.defaultKind, trimmed, trimmed);
